@@ -36,14 +36,17 @@ async def test_async_steps():
         return action
 
     workflow = Workflow()
+    workflow.step(AsyncStep(action_factory(-1, delay=0.5)))
     for n in range(3):
         workflow.step(SequentialStep(action_factory(n)))
 
-    workflow.step(AsyncStep(action_factory(-1, delay=0.05)))
+    workflow.step(AsyncStep(action_factory(-2, delay=0.05)))
 
+    tasks = asyncio.all_tasks()
     await workflow.run()
+    await asyncio.gather(*(asyncio.all_tasks() - tasks))
 
-    assert result == [-1, 0, 1, 2]
+    assert result == [0, 1, 2, -2, -1]
 
 
 @pytest.mark.asyncio

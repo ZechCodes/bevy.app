@@ -31,11 +31,11 @@ class SequentialStep(Step):
         await self.run()
 
 
-class AsyncStep(Step):
+class AsyncStep(SequentialStep):
     """Async steps run immediately after being started."""
 
-    def launch(self, *, loop: AbstractEventLoop, **_) -> None:
-        loop.create_task(self.run())
+    def launch(self, *, prev_step: Future, loop: AbstractEventLoop, **_) -> None:
+        loop.create_task(self._wait_for_previous(prev_step))
         return None
 
 
