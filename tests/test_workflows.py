@@ -1,18 +1,8 @@
 from bevy.app.workflows.step import SequentialStep, AsyncStep, DeferredStep
 from bevy.app.workflows.workflow import Workflow
+from bevy.app.utils import AwaitAllNewTasks
 import asyncio
 import pytest
-
-
-class AwaitAllNewTasks:
-    def __init__(self):
-        self.tasks = set()
-
-    async def __aenter__(self):
-        self.tasks = asyncio.all_tasks()
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await asyncio.gather(*(asyncio.all_tasks() - self.tasks))
 
 
 @pytest.mark.asyncio
