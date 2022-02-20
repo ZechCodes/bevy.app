@@ -4,6 +4,17 @@ import asyncio
 import pytest
 
 
+class AwaitAllNewTasks:
+    def __init__(self):
+        self.tasks = set()
+
+    async def __aenter__(self):
+        self.tasks = asyncio.all_tasks()
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await asyncio.gather(*(asyncio.all_tasks() - self.tasks))
+
+
 @pytest.mark.asyncio
 async def test_sequential_steps():
     result = []
@@ -19,7 +30,8 @@ async def test_sequential_steps():
     for n in range(3):
         workflow.step(SequentialStep(action_factory(n)))
 
-    await workflow.run()
+    async with AwaitAllNewTasks():
+        await workflow.run()
 
     assert result == [0, 1, 2]
 
@@ -42,9 +54,8 @@ async def test_async_steps():
 
     workflow.step(AsyncStep(action_factory(-2, delay=0.05)))
 
-    tasks = asyncio.all_tasks()
-    await workflow.run()
-    await asyncio.gather(*(asyncio.all_tasks() - tasks))
+    async with AwaitAllNewTasks():
+        await workflow.run()
 
     assert result == [0, 1, 2, -2, -1]
 
@@ -66,8 +77,7 @@ async def test_deferred_steps():
 
     workflow.step(DeferredStep(action_factory(-1, delay=0.05)))
 
-    tasks = asyncio.all_tasks()
-    await workflow.run()
-    await asyncio.gather(*(asyncio.all_tasks() - tasks))
+    async with AwaitAllNewTasks():
+        await workflow.run()
 
     assert result == [0, 1, 2, -1]
