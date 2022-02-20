@@ -36,6 +36,9 @@ class LabelIndex(Generic[T]):
     def __set_name__(self, owner, name):
         owner.__bevy_indexes__.append(self)
 
+    def add(self, item: T):
+        self._index[self._get_key(item)].add(item)
+
     def get(
         self, *values: LabelValue, default: Any | None = None
     ) -> tuple[T, ...] | Any | None:
@@ -43,9 +46,6 @@ class LabelIndex(Generic[T]):
             return default
 
         return self[values]
-
-    def add(self, item: T):
-        self._index[self._get_key(item)].add(item)
 
     def remove(self, item: T, *values: LabelValue):
         key = values or self._get_key(item)
