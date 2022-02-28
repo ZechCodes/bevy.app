@@ -2,18 +2,33 @@ from __future__ import annotations
 from bevy.injection import AutoInject, detect_dependencies
 from bevy.app.agents.hooks import Hookable
 from bevy.app.labels.collections import LabelCollection, LabelIndex
-from typing import cast, Type, TypeVar
+from bevy.app.labels.labels import Labels
+from typing import Any, Awaitable, cast, Type, TypeVar
 
 
 T = TypeVar("T", bound="Agent")
 
 
+class Agent(Hookable):
+    labels = Labels(type="agent")
+
+
 @detect_dependencies
-class AgentCollection(LabelCollection, AutoInject):
+class AgentCollection(LabelCollection[Agent], AutoInject):
     type = LabelIndex("type")
 
     def create(self, agent_type: Type[T], *args, **kwargs) -> T:
         return self.factory(agent_type)(*args, **kwargs)
+
+    async def dispatch(
+        self,
+        hook_name: str,
+        args: list[Any] | None = None,
+        kwargs: dict[str, Any] | None = None,
+        labels: dict[str, Any] | None = None,
+    ):
+        for agent in self.get(**labels or {}):
+            await agent.dispatch_to_hook(hook_name, *args or [], **kwargs or {})
 
     def factory(self, agent_type: Type[T]) -> Type[T]:
         constructor = self.__bevy_context__.bind(agent_type)
@@ -23,7 +38,3 @@ class AgentCollection(LabelCollection, AutoInject):
             return instance
 
         return cast(Type[T], create)
-
-
-class Agent(Hookable):
-    ...

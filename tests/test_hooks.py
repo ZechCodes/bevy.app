@@ -1,4 +1,4 @@
-from bevy.app.agents import Agent, hook
+from bevy.app.agents import Agent, AgentCollection, hook
 import pytest
 
 
@@ -108,3 +108,24 @@ def test_hook_inheritance():
     agent = TestAgentBB()
     agent.dispatch_to_hook("test_hook", "testing")
     assert result == {"BB testing", "BBB testing", "D testing"}
+
+
+@pytest.mark.asyncio
+async def test_collection_hooks():
+    result = set()
+
+    class TestAgentA(Agent):
+        @hook("test_hook")
+        async def test_hook_async_callback(self, msg):
+            result.add(f"A {msg}")
+
+    class TestAgentB(Agent):
+        @hook("test_hook")
+        async def test_hook_async_callback(self, msg):
+            result.add(f"B {msg}")
+
+    collection = AgentCollection()
+    collection.add(TestAgentA())
+    collection.add(TestAgentB())
+    await collection.dispatch("test_hook", args=["testing"])
+    assert result == {"A testing", "B testing"}
