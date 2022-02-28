@@ -22,6 +22,7 @@ class Hook:
 
     def __set_name__(self, owner: Hookable, name: str):
         owner.__bevy_hooks__[self._hook_name].add(name)
+        setattr(owner, name, self._func)
 
 
 def hook(hook_name: str) -> Callable[P, R]:
