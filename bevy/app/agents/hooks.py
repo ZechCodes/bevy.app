@@ -1,8 +1,9 @@
 from __future__ import annotations
+from asyncio import gather
 from collections import defaultdict
-from typing import Callable, cast, ParamSpec, TypeVar
 from copy import deepcopy
 from inspect import getmro
+from typing import Awaitable, Callable, cast, Generator, Iterable, ParamSpec, TypeVar
 
 
 P = ParamSpec("P")
@@ -29,6 +30,30 @@ class HookClassRepository:
 
 class Hookable:
     __bevy_hooks__: dict[str, set[str]] = HookClassRepository()
+
+    def dispatch_to_hook(
+        self, hook_name: str, *args: P.args, **kwargs: P.kwargs
+    ) -> Awaitable:
+        return gather(
+            *self.__run_callbacks(self.__get_callbacks(hook_name), *args, **kwargs)
+        )
+
+    def __get_callbacks(self, hook_name: str) -> Generator[None, Callable[P, R], None]:
+        yield from (
+            getattr(self, name) for name in type(self).__bevy_hooks__[hook_name]
+        )
+
+    def __run_callbacks(
+        self, callbacks: Iterable[Callable[P, R]], *args: P.args, **kwargs: P.kwargs
+    ) -> Generator[None, Awaitable, None]:
+        yield from (
+            ret
+            for callback in callbacks
+            if isawaitable(ret := self.__run_callback(callback, *args, **kwargs))
+        )
+
+    def __run_callback(self, callback, *args, **kwargs) -> Awaitable | None:
+        return callback(*args, **kwargs)
 
 
 class Hook:
