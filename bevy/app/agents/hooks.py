@@ -2,7 +2,7 @@ from __future__ import annotations
 from asyncio import gather
 from collections import defaultdict
 from copy import deepcopy
-from inspect import getmro
+from inspect import isawaitable, getmro
 from typing import Awaitable, Callable, cast, Generator, Iterable, ParamSpec, TypeVar
 
 
