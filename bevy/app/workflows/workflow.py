@@ -1,11 +1,11 @@
+import asyncio
+from itertools import starmap
+from typing import Any, TypeVar
+
 from bevy.app.labels import Labels
 from bevy.app.options import Options
 from bevy.app.workflows.step import Step
 from bevy.injection import AutoInject, detect_dependencies
-from itertools import starmap
-from typing import Any, TypeVar
-import asyncio
-
 
 Self = TypeVar("Self", bound="Workflow")
 
