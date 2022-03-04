@@ -1,8 +1,9 @@
 from asyncio import BaseEventLoop, Future
-from bevy.app.workflows.scheduling import SchedulingStrategyRegistry
-from bevy.injection import AutoInject, detect_dependencies
 from inspect import isawaitable
 from typing import Awaitable, Callable
+
+from bevy.app.workflows.scheduling import SchedulingStrategyRegistry
+from bevy.injection import AutoInject, detect_dependencies
 
 
 @detect_dependencies
