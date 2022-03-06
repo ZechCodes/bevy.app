@@ -29,3 +29,6 @@ class Step(AutoInject):
         ret = self.callback()
         if isawaitable(ret):
             await ret
+
+    def __repr__(self):
+        return f"{type(self).__name__}({self.action!r}, *, schedule={self.scheduling_strategy!r}, name={self.name!r})"
