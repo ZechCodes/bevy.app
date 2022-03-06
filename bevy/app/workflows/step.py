@@ -1,19 +1,20 @@
 from asyncio import BaseEventLoop, Future
 from inspect import isawaitable
-from typing import Awaitable, Callable
+from typing import Awaitable
 
 from bevy.app.workflows.scheduling import SchedulingStrategyRegistry
 from bevy.injection import AutoInject, detect_dependencies
 
+from bevy.app.workflows.action import Action
 
 @detect_dependencies
 class Step(AutoInject):
     _scheduling_strategies: SchedulingStrategyRegistry
 
     def __init__(
-        self, callback: Callable[[], Awaitable | None], *, schedule: str = "sequential"
+        self, action: Action, *, schedule: str = "sequential", name: str | None = None
     ):
-        self.callback = callback
+        self.action = action @ self.__bevy_context__
         self.scheduling_strategy = self._scheduling_strategies.create(
             schedule, self.run
         )
@@ -26,7 +27,7 @@ class Step(AutoInject):
         )
 
     async def run(self):
-        ret = self.callback()
+        ret = self.action.run()
         if isawaitable(ret):
             await ret
 
