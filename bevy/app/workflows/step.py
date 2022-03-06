@@ -2,10 +2,12 @@ from asyncio import BaseEventLoop, Future
 from inspect import isawaitable
 from typing import Awaitable
 
-from bevy.app.workflows.scheduling import SchedulingStrategyRegistry
 from bevy.injection import AutoInject, detect_dependencies
 
+from bevy.app.deferred_constructor import DeferConstructor
 from bevy.app.workflows.action import Action
+from bevy.app.workflows.scheduling import SchedulingStrategyRegistry
+
 
 @detect_dependencies
 class Step(AutoInject):
