@@ -1,13 +1,12 @@
 import asyncio
-from itertools import starmap
-from typing import Any, TypeVar
+from typing import Any
 
+from bevy.injection import AutoInject, detect_dependencies
+
+from bevy.app.deferred_constructor import DeferConstructor, DeferredConstructor
 from bevy.app.labels import Labels
 from bevy.app.options import Options
 from bevy.app.workflows.step import Step
-from bevy.injection import AutoInject, detect_dependencies
-
-Self = TypeVar("Self", bound="Workflow")
 
 
 class NullFuture(asyncio.Future):
@@ -19,13 +18,18 @@ class NullFuture(asyncio.Future):
 
 
 @detect_dependencies
-class Workflow(AutoInject):
-    options: Options
+class Workflow(DeferConstructor, AutoInject):
+    app_options: Options
 
-    def __init__(self):
-        self._labels = Labels()
-        self._steps = []
-        self._namespace = {}
+    def __init__(
+        self,
+        labels: Labels | None = None,
+        steps: list[Step] | None = None,
+        options: dict[str, Any] | None = None,
+    ):
+        self._labels = labels or Labels()
+        self._steps = self._initialize_steps(steps or [])
+        self._options = options or {}
 
     @property
     def labels(self) -> Labels:
@@ -35,19 +39,14 @@ class Workflow(AutoInject):
     def steps(self) -> list[Step]:
         return self._steps
 
-    def label(self: Self, **labels) -> Self:
-        self._labels |= labels
-        return self
+    @property
+    def options(self) -> dict[str, Any]:
+        return self._options
 
-    def step(self: Self, step: Step) -> Self:
-        self._steps.append(step)
-        return self
+    def value(self, **values):
+        self._options |= values
 
-    def value(self: Self, **values) -> Self:
-        self._namespace |= starmap(self._process_value, values.items())
-        return self
-
-    async def run(self, loop: asyncio.AbstractEventLoop | None = None):
+    async def run(self, loop: asyncio.BaseEventLoop | None = None):
         loop = loop or asyncio.get_running_loop()
         prev_step = NullFuture(loop=loop)
         done = asyncio.Future()
@@ -61,11 +60,24 @@ class Workflow(AutoInject):
         await asyncio.gather(*tasks)
         done.set_result(True)
 
+    def _initialize_steps(
+        self, steps: list[DeferredConstructor[Step] | Step]
+    ) -> list[Step]:
+        return [
+            step @ self.__bevy_context__
+            if isinstance(step, DeferredConstructor)
+            else step
+            for step in steps
+        ]
+
     def _process_value(self, key: str, value: Any) -> tuple[str, Any]:
         match key[0], key[1:]:
             case "$", key:
-                return key, value.format(**self._namespace)
+                return key, value.format(**self._options)
             case "@", key:
                 return key, self.options[value]
             case _:
                 return key, value
+
+    def __repr__(self):
+        return f"{type(self).__name__}({self.labels}, {self.steps}, {self.options})"
