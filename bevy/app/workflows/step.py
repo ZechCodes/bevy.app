@@ -10,7 +10,7 @@ from bevy.app.workflows.scheduling import SchedulingStrategyRegistry
 
 
 @detect_dependencies
-class Step(AutoInject):
+class Step(DeferConstructor, AutoInject):
     _scheduling_strategies: SchedulingStrategyRegistry
 
     def __init__(
