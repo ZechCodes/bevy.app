@@ -11,13 +11,16 @@ T = TypeVar("T")
 NOT_SET = object()
 
 
-class LabelCollection(Generic[T]):
+class LabelCollection(Generic[T], AutoInject):
     __bevy_indexes__: list[LabelIndex] = []
 
     def __init__(self):
         self._items: set[T] = set()
 
     def add(self, item: T):
+        if isinstance(item, DeferredConstructor):
+            item = item @ self.__bevy_context__
+
         self._items.add(item)
         self._add_to_indexes(item)
 
