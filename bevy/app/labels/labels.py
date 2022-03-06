@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from collections import UserDict
 from typing import Protocol, Type, TypeVar
 
