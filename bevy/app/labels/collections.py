@@ -1,7 +1,10 @@
-from bevy.app.labels.indexes import LabelIndex
-from bevy.app.labels.labels import LabelValue, LabelProtocol
 from typing import Generic, TypeVar
 
+from bevy.injection import AutoInject
+
+from bevy.app.deferred_constructor import DeferredConstructor
+from bevy.app.labels.indexes import LabelIndex
+from bevy.app.labels.labels import LabelValue
 
 T = TypeVar("T", bound=LabelProtocol)
 NOT_SET = object()
