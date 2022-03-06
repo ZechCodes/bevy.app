@@ -1,9 +1,12 @@
 from __future__ import annotations
+
+from typing import Any, cast, Type, TypeVar
+
 from bevy.injection import AutoInject, detect_dependencies
+
 from bevy.app.agents.hooks import Hookable
 from bevy.app.labels.collections import LabelCollection, LabelIndex
 from bevy.app.labels.labels import Labels
-from typing import Any, Awaitable, cast, Type, TypeVar
 
 
 T = TypeVar("T", bound="Agent")
