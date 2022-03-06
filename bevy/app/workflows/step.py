@@ -14,6 +14,7 @@ class Step(AutoInject):
     def __init__(
         self, action: Action, *, schedule: str = "sequential", name: str | None = None
     ):
+        self.name = name
         self.action = action @ self.__bevy_context__
         self.scheduling_strategy = self._scheduling_strategies.create(
             schedule, self.run
