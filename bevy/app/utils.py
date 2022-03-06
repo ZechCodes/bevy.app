@@ -1,4 +1,8 @@
+from __future__ import annotations
+
 import asyncio
+from inspect import isawaitable
+from typing import Awaitable, Callable, Iterable, TypeVar
 
 
 class AwaitAllNewTasks:
