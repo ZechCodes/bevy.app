@@ -1,73 +1,41 @@
-from bevy.app.workflows.step import Step
-from bevy.app.workflows.workflow import Workflow
-from bevy.app.utils import AwaitAllNewTasks
-import asyncio
 import pytest
+from bevy.injection import Context
 
-
-@pytest.mark.asyncio
-async def test_sequential_steps():
-    result = []
-
-    def action_factory(n, delay=0.1):
-        async def action():
-            await asyncio.sleep(delay)
-            result.append(n)
-
-        return action
-
-    workflow = Workflow()
-    for n in range(3):
-        workflow.step(Step(action_factory(n)))
-
-    async with AwaitAllNewTasks():
-        await workflow.run()
-
-    assert result == [0, 1, 2]
-
-
-@pytest.mark.asyncio
-async def test_concurrent_steps():
-    result = []
-
-    def action_factory(n, delay=0.1):
-        async def action():
-            await asyncio.sleep(delay)
-            result.append(n)
-
-        return action
-
-    workflow = Workflow()
-    workflow.step(Step(action_factory(-1, delay=0.5), schedule="concurrent"))
-    for n in range(3):
-        workflow.step(Step(action_factory(n)))
-
-    workflow.step(Step(action_factory(-2, delay=0.05), schedule="concurrent"))
-
-    async with AwaitAllNewTasks():
-        await workflow.run()
-
-    assert result == [0, 1, 2, -2, -1]
+from bevy.app.agents import Agent, AgentCollection, hook
+from bevy.app.ext import RunWorkflowAction, TriggerAgentHookAction
+from bevy.app.labels import Labels
+from bevy.app.utils import apply, AwaitAllNewTasks
+from bevy.app.workflows import Step, Workflow, WorkflowCollection
 
 
 @pytest.mark.asyncio
 async def test_deferred_steps():
     result = []
 
-    def action_factory(n, delay=0.1):
-        async def action():
-            await asyncio.sleep(delay)
-            result.append(n)
+    class TestAgent(Agent):
+        labels = Labels(type="test")
 
-        return action
+        @hook("test-hook")
+        def test_hook(self):
+            result.append("RAN")
 
-    workflow = Workflow()
-    for n in range(3):
-        workflow.step(Step(action_factory(n)))
-
-    workflow.step(Step(action_factory(-1, delay=0.05), schedule="deferred"))
+    context = Context() << (WorkflowCollection @ Context) << (AgentCollection @ Context)
+    workflows = WorkflowCollection << context
+    workflows.add(
+        Workflow(
+            labels=Labels(type="launch"),
+            steps=[Step(RunWorkflowAction(Labels(type="run")))],
+        )
+    )
+    workflows.add(
+        Workflow(
+            labels=Labels(type="run"),
+            steps=[Step(TriggerAgentHookAction("test-hook", Labels(type="test")))],
+        )
+    )
+    (AgentCollection << context).add(TestAgent @ context)
 
     async with AwaitAllNewTasks():
-        await workflow.run()
+        await apply(Workflow.run, workflows.get(type="launch"))
 
-    assert result == [0, 1, 2, -1]
+    assert result == ["RAN"]
