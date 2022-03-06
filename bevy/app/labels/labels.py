@@ -18,3 +18,6 @@ class Labels(UserDict):
             instance.labels = self.copy()
 
         return instance.labels
+
+    def __repr__(self):
+        return f"{type(self).__name__}({', '.join(f'{name}={value!r}' for name, value in self.items())})"
