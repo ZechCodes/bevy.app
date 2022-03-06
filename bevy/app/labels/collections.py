@@ -6,7 +6,8 @@ from bevy.app.deferred_constructor import DeferredConstructor
 from bevy.app.labels.indexes import LabelIndex
 from bevy.app.labels.labels import LabelValue
 
-T = TypeVar("T", bound=LabelProtocol)
+
+T = TypeVar("T")
 NOT_SET = object()
 
 
